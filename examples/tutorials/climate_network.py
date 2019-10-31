@@ -16,8 +16,7 @@ Copyright 2008-2019.
 import numpy as np
 
 from pyunicorn import climate
-
-
+import sys, os
 #
 #  Settings
 #
@@ -25,7 +24,16 @@ from pyunicorn import climate
 #  Related to data
 
 #  Path and filename of NetCDF file containing climate data
-DATA_FILENAME = "../../../Daten/Reanalysis/NCEP-NCAR/air.mon.mean.nc"
+#  Please download the Data from https://www.esrl.noaa.gov/psd/repository/entry/show?entryid=0def76a0-9b32-47a4-8bc3-c4977c67ed95
+DATA_FILENAME = "./air.mon.mean.nc"
+
+if not os.path.isfile(DATA_FILENAME):
+    print('File not found. Please download the data from https://www.esrl.noaa.gov/psd/repository/entry/show?entryid=0def76a0-9b32-47a4-8bc3-c4977c67ed95 \
+        and/or change path for DATA_FILENAME accordingly ')
+    sys.exit(1)
+
+
+# DATA_FILENAME = "../../../Daten/Reanalysis/NCEP-NCAR/air.mon.mean.nc"
 
 #  Type of data file ("NetCDF" indicates a NetCDF file with data on a regular
 #  lat-lon grid, "iNetCDF" allows for arbitrary grids - > see documentation).
