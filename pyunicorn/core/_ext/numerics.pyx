@@ -45,8 +45,8 @@ cdef extern from "time.h":
     double time()
 
 cdef extern from "src_numerics.c":
-    void _geo_model1()
-    
+    void *_geo_model_1_fast(int iterations, float tolerance,
+        short *A, float *D, int *link_list, int N, int E)    
     void _randomly_rewire_geomodel_I_fast(int iterations, float eps, short *A,
         float *D, int E, int N, int *edges)
     void _randomly_rewire_geomodel_II_fast(int iterations, float eps, short *A,
@@ -68,11 +68,11 @@ cdef extern from "src_numerics.c":
 # spatial networks ===========================================================
 def _geo_model1(int iterations, float eps,
     np.ndarray[short, ndim=2] A, np.ndarray[float, ndim=2] D,  
-    np.ndarray[INTTYPE_t, ndim=2] edge_list, int N, int E):
+    np.ndarray[INTTYPE_t, ndim=2] link_list, int N, int E) :
 
     _geo_model_1_fast(iterations, eps,
             <short*> np.PyArray_DATA(A), <float*> np.PyArray_DATA(D), 
-            <int*> np.PyArray_DATA(edges), N, E)   
+            <int*> np.PyArray_DATA(link_list), N, E)   
 
 # geo_network =================================================================
 

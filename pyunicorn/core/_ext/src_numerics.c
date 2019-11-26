@@ -16,20 +16,20 @@
 
 float *distance(float *D, int node, int *list_of_neighbors, int numNeighbors, int N ){
 	float *d_i_all = malloc(sizeof(float)*numNeighbors) ;
-	for (int i=0; i<numNeighbors) {
+	for (int i=0; i<numNeighbors; i++) {
 		d_i_all[i]=D[node*N + list_of_neighbors[i]];
 	}
 	return d_i_all;
 }
 
 // for shuffeling of neighbor_lists
-void fisher_yates_shuffeling(int *list_nb, int len_list){
+void fisher_yates_shuffeling(int *list_nb, int n){
 	for (int i = n-1; i >= 0; --i){
 	    //generate a random number [0, n-1]
 	    int j = rand() % (i+1);
 
 	    //swap the last element with element at random index
-	    int temp = *list_nb[i];
+	    int temp = list_nb[i];
 	    list_nb[i] = list_nb[j];
 	    list_nb[j] = temp;
 	}
@@ -44,7 +44,7 @@ int in_array(const int store[], const int storeSize, const int query) {
 	return -1;
 }
 
-int *_geo_model_1_fast(int iterations, float tolerance,
+void _geo_model_1_fast(int iterations, float tolerance,
 		short *A, float *D, int *link_list, int N, int E)
 		{
 
@@ -57,7 +57,6 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 		list_all_neighbors[tmp]=tmp;
 	}
 
-	int c = 0;
 	int q = 0;
 	for (int u=0; u< iterations; u++) {
 
@@ -81,7 +80,7 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 			int nb_count=0;
 			int *mask=malloc(N*sizeof(int));
 			for (int d=0; d<N; d++){
-				Dist_j = d_i_all[d] - d_i_all[j];
+				float Dist_j = d_i_all[d] - d_i_all[j];
 				if (fabs(Dist_j) < tolerance * d_i_all[j]){
 					mask[d]=1;
 					nb_count++;
@@ -90,9 +89,9 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 					mask[d]=0;
 				}
 			}
-
-			mask[i] = False;
-			mask[j] = False;
+			// This two we want to exclude! Corresponds False
+			mask[i] = 0;
+			mask[j] = 0;
 
 			int *possible_nbs=malloc(sizeof(int)*nb_count);
 			int tmp=0;
@@ -119,17 +118,17 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 					}
 				}
 
-				if (in_array(nbs_of_k, nk_count, i) | nk_count == 0) {
+				if (in_array(nbs_of_k, nk_count, i) | (nk_count == 0) ) {
 					continue;
 				}
-				d_k_all = distance(D,k, nbs_of_k, nk_count,N);
-				d_j_all = distance(D,j, nbs_of_k, nk_count,N);
+				float *d_k_all = distance(D,k, nbs_of_k, nk_count,N);
+				float *d_j_all = distance(D,j, nbs_of_k, nk_count,N);
 
 				//printf('Lengths', len(d_k_all), len(d_j_all))
 				int mask2[nk_count];
 				int any_candidate=0;
 				for(int d=0; d<nk_count;d++) {
-					Dist_k_j=d_k_all[d] - d_j_all[d];
+					float Dist_k_j=d_k_all[d] - d_j_all[d];
 					if (fabs(Dist_k_j)<tolerance*d_k_all[d]) {
 						mask2[d]=1;
 						any_candidate+=1;
@@ -147,7 +146,7 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 							candidate_count++;
 						}
 					}
-					l_candidate=possible_candidates[rand() % any_candidate];
+					int l_candidate=possible_candidates[rand() % any_candidate];
 					int nl_count=0;
 
 					// Now check if j is a neighbor of l
@@ -187,11 +186,11 @@ int *_geo_model_1_fast(int iterations, float tolerance,
 				}
 			}
 
-			// Now update the link list
-			link_list[first_link_index*N+0] = s;
-			link_list[first_link_index*N+1] = l;
-			link_list[second_link_index*N+0] = k;
-			link_list[second_link_index*N+1] = t;
+			// Now update the link list to i<->k j<->l
+			link_list[first_link_index*N+0] = i;
+			link_list[first_link_index*N+1] = k;
+			link_list[second_link_index*N+0] = j;
+			link_list[second_link_index*N+1] = l;
 		}
 	}
  }
@@ -295,7 +294,7 @@ void _randomly_rewire_geomodel_I_fast(int iterations, float eps, short *A,
 
 
 void _randomly_rewire_geomodel_II_fast(int iterations, float eps, short *A,
-    float *nD, int E, int N, int *edges)  {
+    float *D, int E, int N, int *edges)  {
 
     int i, s, t, k, l, edge1, edge2;
 
