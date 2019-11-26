@@ -44,6 +44,8 @@ cdef extern from "time.h":
     double time()
 
 cdef extern from "src_numerics.c":
+    void _geo_model1()
+    
     void _randomly_rewire_geomodel_I_fast(int iterations, float eps, short *A,
         float *D, int E, int N, int *edges)
     void _randomly_rewire_geomodel_II_fast(int iterations, float eps, short *A,
@@ -60,6 +62,11 @@ cdef extern from "src_numerics.c":
     void _edge_current_flow_betweenness_fast(int N, double Is, double It,
         float *admittance, float *R, float *ECFB)
 
+
+
+# spatial networks ===========================================================
+def _geo_model1():
+    
 
 # geo_network =================================================================
 

@@ -45,9 +45,11 @@ class SpatialNetwork(GeoNetwork):
         d_i_all=[]
         if list_of_neighbors is None:
             list_of_neighbors=range(len(D[node]))
+            print(list_of_neighbors)
         for i in list_of_neighbors:
             d_i_all.append(D[node][i])
-        
+            print(list_of_neighbors)
+
         return np.array(d_i_all)
     
     def link_id(self, node1, node2, N):

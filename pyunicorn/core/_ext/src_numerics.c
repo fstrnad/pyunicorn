@@ -9,8 +9,181 @@
 */
 
 #include <math.h>
-
+#define ARR_SIZE(arr) ( sizeof((arr)) / sizeof((arr[0])) )  // Always useful macro to get the array size!
 // geo_network ================================================================
+
+
+
+float *distance(float *D, int node, int *list_of_neighbors, int numNeighbors, int N ){
+	float *d_i_all = malloc(sizeof(float)*numNeighbors) ;
+	for (int i=0; i<numNeighbors) {
+		d_i_all[i]=D[node*N + list_of_neighbors[i]];
+	}
+	return d_i_all;
+}
+
+// for shuffeling of neighbor_lists
+void fisher_yates_shuffeling(int *list_nb, int len_list){
+	for (int i = n-1; i >= 0; --i){
+	    //generate a random number [0, n-1]
+	    int j = rand() % (i+1);
+
+	    //swap the last element with element at random index
+	    int temp = *list_nb[i];
+	    list_nb[i] = list_nb[j];
+	    list_nb[j] = temp;
+	}
+}
+
+int in_array(const int store[], const int storeSize, const int query) {
+	for (int i=0; i<storeSize; ++i) {
+		if (store[i] == query) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void _spatial_networks(int iterations, float tolerance, int *link_list, int N, int E,
+		 int *A, float *D, float *T, float *x, float *H) {
+
+	 //  Initialize random number generator
+	 srand48(time(0));
+	 int i, j, k, l ;
+	 float *d_i_all;
+	 int *list_all_neighbors=malloc(sizeof(int)*N) ;
+	 for (int tmp=0; tmp<N; tmp++) {
+		 list_all_neighbors[tmp]=tmp;
+	 }
+
+	 int c = 0;
+	 int q = 0;
+	 for (int u=0; u< iterations; u++) {
+
+		 int cond = 1;
+		 while (cond<1) {
+			 q += 1;
+
+			 int first_link_index = floor(drand48() * E);
+
+			 i= link_list[first_link_index*N+0];
+			 j= link_list[first_link_index*N+1];
+
+			 //			 active_link = np.random.permutation(active_link)
+			 //			 i, j = active_link
+
+			 // If second argument is None, distance to any neighbor node is calculated
+
+
+
+			 d_i_all = distance(D, i,list_all_neighbors, N, N );
+			 int nb_count=0;
+			 int *mask=malloc(N*sizeof(int));
+			 for (int d=0; d<N; d++){
+				 Dist_j = d_i_all[d] - d_i_all[j];
+				 if (fabs(Dist_j) < tolerance * d_i_all[j]){
+					 mask[d]=1;
+					 nb_count++;
+				 }
+				 else {
+					 mask[d]=0;
+				 }
+			 }
+
+			 mask[i] = False;
+			 mask[j] = False;
+
+			 int *possible_nbs=malloc(sizeof(int)*nb_count);
+			 int tmp=0;
+			 for (int d=0; d<N; d++){
+				 if (mask[i]==1){
+					 possible_nbs[tmp]=d;
+					 tmp++;
+				 }
+			 }
+			 // Permutation of possible_nbs list
+			 fisher_yates_shuffeling(possible_nbs,nb_count);
+
+			 l=-1;
+
+			 for (int rk=0; rk<nb_count; rk++) {
+				 int nk_count=0;
+				 k=possible_nbs[rk];
+				 int *nbs_of_k=malloc(sizeof(int)*N);
+				 for (int e =0; e<E; e+=2){
+					 if (link_list[e]==k)
+					 {
+						 nbs_of_k[nk_count]=link_list[e+1]; // TODO check if this is true!
+					 }
+				 }
+
+				 if (in_array(nbs_of_k, nk_count, i) | nk_count == 0) {
+					 continue;
+				 }
+				 d_k_all = distance(D,k, nbs_of_k, nk_count,N);
+				 d_j_all = distance(D,j, nbs_of_k, nk_count,N);
+
+				 //printf('Lengths', len(d_k_all), len(d_j_all))
+				int mask2[nk_count];
+				int any_candidate=0;
+				for(int d=0; d<nk_count;d++) {
+					Dist_k_j=d_k_all[d] - d_j_all[d];
+					if (fabs(Dist_k_j)<tolerance*d_k_all[d]) {
+						mask[d]=1;
+						any_candidate=1;
+					}
+					else {
+						mask[d]=0;
+					}
+				}
+				if (any_candidate==1) {
+					 l_candidate = choice(nbs_of_k[mask])
+					 nbs_of_l = np.fliplr(link_list == l_candidate)
+					 nbs_of_l = link_list[nbs_of_l]
+					 if j not in nbs_of_l:
+						 l = l_candidate
+						 break
+			 }
+
+			 if (l==-1){
+				 continue;  // Returns to beginning of while loop
+			 }
+			 cond = 0;
+
+		 }
+		 second_link_index = ((link_list == k) | (link_list == l))
+		 second_link_index = second_link_index.sum(axis=1) == 2
+		 second_link_index = np.arange(E)[second_link_index]
+
+		 # gives id for link i<->k resp. j<->l in original_link_ids
+		 id1, i, k = self.link_id(i, k, N)
+		 id2, j, l = self.link_id(j, l, N)
+
+
+		 A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
+		 A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
+		 A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
+		 A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
+
+		 link_list[first_link_index] = [i, k]
+		 link_list[second_link_index] = [j, l]
+		 sur_link_ids[first_link_index] = id1
+		 sur_link_ids[second_link_index] = id2
+		 c += 1
+		 if c == compute_at:
+			 g = igraph.Graph(link_list.tolist())
+			 x.append(u)
+			 T.append(g.transitivity_avglocal_undirected())
+			 H.append(self._Hamming_Distance(original_link_ids, sur_link_ids))
+			 L.append(g.average_path_length())
+			 ass.append(g.assortativity_degree())
+			 c = 0
+			 print(c,compute_at)
+	 }
+ }
+
+
+
 
 void _randomly_rewire_geomodel_I_fast(int iterations, float eps, short *A,
     float *D, int E, int N, int *edges)  {
@@ -108,7 +281,7 @@ void _randomly_rewire_geomodel_I_fast(int iterations, float eps, short *A,
 
 
 void _randomly_rewire_geomodel_II_fast(int iterations, float eps, short *A,
-    float *D, int E, int N, int *edges)  {
+    float *nD, int E, int N, int *edges)  {
 
     int i, s, t, k, l, edge1, edge2;
 
