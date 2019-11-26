@@ -39,6 +39,7 @@ ctypedef np.float64_t FLOAT64TYPE_t
 cdef extern from "stdlib.h":
     double drand48()
     double srand48()
+    double rand()
 
 cdef extern from "time.h":
     double time()
@@ -65,8 +66,13 @@ cdef extern from "src_numerics.c":
 
 
 # spatial networks ===========================================================
-def _geo_model1():
-    
+def _geo_model1(int iterations, float eps,
+    np.ndarray[short, ndim=2] A, np.ndarray[float, ndim=2] D,  
+    np.ndarray[INTTYPE_t, ndim=2] edge_list, int N, int E):
+
+    _geo_model_1_fast(iterations, eps,
+            <short*> np.PyArray_DATA(A), <float*> np.PyArray_DATA(D), 
+            <int*> np.PyArray_DATA(edges), N, E)   
 
 # geo_network =================================================================
 

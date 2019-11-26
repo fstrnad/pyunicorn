@@ -44,8 +44,9 @@ int in_array(const int store[], const int storeSize, const int query) {
 	return -1;
 }
 
-int *_spatial_networks(int iterations, float tolerance, int *link_list, int N, int E,
-		 int *A, float *D, float *T, float *x, float *H) {
+int *_geo_model_1_fast(int iterations, float tolerance,
+		short *A, float *D, int *link_list, int N, int E)
+		{
 
 	//  Initialize random number generator
 	srand48(time(0));
@@ -154,6 +155,7 @@ int *_spatial_networks(int iterations, float tolerance, int *link_list, int N, i
 					for (int ec =0; ec<E; ec+=2) {
 						if (link_list[ec]==k)
 						{
+
 							nbs_of_l[nl_count]=link_list[ec+1]; // TODO check if this is true!
 							nl_count++;
 						}
@@ -171,27 +173,27 @@ int *_spatial_networks(int iterations, float tolerance, int *link_list, int N, i
 				cond = 0;
 			}
 
-		 A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
-		 A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
-		 A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
-		 A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
+			A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
+			A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
+			A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
+			A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
 
-		 // Now find id of second_link_index k<->l
-		 int second_link_index;
-		 for (int ec=0; ec<E; ec++){
-			 if ( (link_list[ec]==k && link_list[ec+1]==l ) |  (link_list[ec]==l && link_list[ec+1]==k ) ) {
-				 second_link_index=ec;
-				 break;
-			 }
-		 }
+			// Now find id of second_link_index k<->l
+			int second_link_index;
+			for (int ec=0; ec<E; ec++){
+				if ( (link_list[ec]==k && link_list[ec+1]==l ) |  (link_list[ec]==l && link_list[ec+1]==k ) ) {
+					second_link_index=ec;
+					break;
+				}
+			}
 
-		 // Now update the link list
-		 link_list[first_link_index*N+0] = s;
-		 link_list[first_link_index*N+1] = l;
-		 link_list[second_link_index*N+0] = k;
-		 link_list[second_link_index*N+1] = t;
-
-		 return [first_link_index, second_link_index];
+			// Now update the link list
+			link_list[first_link_index*N+0] = s;
+			link_list[first_link_index*N+1] = l;
+			link_list[second_link_index*N+0] = k;
+			link_list[second_link_index*N+1] = t;
+		}
+	}
  }
 
 
