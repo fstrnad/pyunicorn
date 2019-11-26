@@ -44,142 +44,154 @@ int in_array(const int store[], const int storeSize, const int query) {
 	return -1;
 }
 
-void _spatial_networks(int iterations, float tolerance, int *link_list, int N, int E,
+int *_spatial_networks(int iterations, float tolerance, int *link_list, int N, int E,
 		 int *A, float *D, float *T, float *x, float *H) {
 
-	 //  Initialize random number generator
-	 srand48(time(0));
-	 int i, j, k, l ;
-	 float *d_i_all;
-	 int *list_all_neighbors=malloc(sizeof(int)*N) ;
-	 for (int tmp=0; tmp<N; tmp++) {
-		 list_all_neighbors[tmp]=tmp;
-	 }
+	//  Initialize random number generator
+	srand48(time(0));
+	int i, j, k, l ;
+	float *d_i_all;
+	int *list_all_neighbors=malloc(sizeof(int)*N) ;
+	for (int tmp=0; tmp<N; tmp++) {
+		list_all_neighbors[tmp]=tmp;
+	}
 
-	 int c = 0;
-	 int q = 0;
-	 for (int u=0; u< iterations; u++) {
+	int c = 0;
+	int q = 0;
+	for (int u=0; u< iterations; u++) {
 
-		 int cond = 1;
-		 while (cond<1) {
-			 q += 1;
+		int cond = 1;
+		while (cond<1) {
+			q += 1;
 
-			 int first_link_index = floor(drand48() * E);
+			int first_link_index = floor(drand48() * E);
 
-			 i= link_list[first_link_index*N+0];
-			 j= link_list[first_link_index*N+1];
+			i= link_list[first_link_index*N+0];
+			j= link_list[first_link_index*N+1];
 
-			 //			 active_link = np.random.permutation(active_link)
-			 //			 i, j = active_link
+			//			 active_link = np.random.permutation(active_link)
+			//			 i, j = active_link
 
-			 // If second argument is None, distance to any neighbor node is calculated
+			// If second argument is None, distance to any neighbor node is calculated
 
 
 
-			 d_i_all = distance(D, i,list_all_neighbors, N, N );
-			 int nb_count=0;
-			 int *mask=malloc(N*sizeof(int));
-			 for (int d=0; d<N; d++){
-				 Dist_j = d_i_all[d] - d_i_all[j];
-				 if (fabs(Dist_j) < tolerance * d_i_all[j]){
-					 mask[d]=1;
-					 nb_count++;
-				 }
-				 else {
-					 mask[d]=0;
-				 }
-			 }
+			d_i_all = distance(D, i,list_all_neighbors, N, N );
+			int nb_count=0;
+			int *mask=malloc(N*sizeof(int));
+			for (int d=0; d<N; d++){
+				Dist_j = d_i_all[d] - d_i_all[j];
+				if (fabs(Dist_j) < tolerance * d_i_all[j]){
+					mask[d]=1;
+					nb_count++;
+				}
+				else {
+					mask[d]=0;
+				}
+			}
 
-			 mask[i] = False;
-			 mask[j] = False;
+			mask[i] = False;
+			mask[j] = False;
 
-			 int *possible_nbs=malloc(sizeof(int)*nb_count);
-			 int tmp=0;
-			 for (int d=0; d<N; d++){
-				 if (mask[i]==1){
-					 possible_nbs[tmp]=d;
-					 tmp++;
-				 }
-			 }
-			 // Permutation of possible_nbs list
-			 fisher_yates_shuffeling(possible_nbs,nb_count);
+			int *possible_nbs=malloc(sizeof(int)*nb_count);
+			int tmp=0;
+			for (int d=0; d<N; d++){
+				if (mask[i]==1){
+					possible_nbs[tmp]=d;
+					tmp++;
+				}
+			}
+			// Permutation of possible_nbs list
+			fisher_yates_shuffeling(possible_nbs,nb_count);
 
-			 l=-1;
+			l=-1;
 
-			 for (int rk=0; rk<nb_count; rk++) {
-				 int nk_count=0;
-				 k=possible_nbs[rk];
-				 int *nbs_of_k=malloc(sizeof(int)*N);
-				 for (int e =0; e<E; e+=2){
-					 if (link_list[e]==k)
-					 {
-						 nbs_of_k[nk_count]=link_list[e+1]; // TODO check if this is true!
-					 }
-				 }
+			for (int rk=0; rk<nb_count; rk++) {
+				int nk_count=0;
+				k=possible_nbs[rk];
+				int *nbs_of_k=malloc(sizeof(int)*N);
+				for (int ec =0; ec<E; ec+=2){
+					if (link_list[ec]==k)
+					{
+						nbs_of_k[nk_count]=link_list[ec+1]; // TODO check if this is true!
+						nk_count++;
+					}
+				}
 
-				 if (in_array(nbs_of_k, nk_count, i) | nk_count == 0) {
-					 continue;
-				 }
-				 d_k_all = distance(D,k, nbs_of_k, nk_count,N);
-				 d_j_all = distance(D,j, nbs_of_k, nk_count,N);
+				if (in_array(nbs_of_k, nk_count, i) | nk_count == 0) {
+					continue;
+				}
+				d_k_all = distance(D,k, nbs_of_k, nk_count,N);
+				d_j_all = distance(D,j, nbs_of_k, nk_count,N);
 
-				 //printf('Lengths', len(d_k_all), len(d_j_all))
+				//printf('Lengths', len(d_k_all), len(d_j_all))
 				int mask2[nk_count];
 				int any_candidate=0;
 				for(int d=0; d<nk_count;d++) {
 					Dist_k_j=d_k_all[d] - d_j_all[d];
 					if (fabs(Dist_k_j)<tolerance*d_k_all[d]) {
-						mask[d]=1;
-						any_candidate=1;
+						mask2[d]=1;
+						any_candidate+=1;
 					}
 					else {
-						mask[d]=0;
+						mask2[d]=0;
 					}
 				}
-				if (any_candidate==1) {
-					 l_candidate = choice(nbs_of_k[mask])
-					 nbs_of_l = np.fliplr(link_list == l_candidate)
-					 nbs_of_l = link_list[nbs_of_l]
-					 if j not in nbs_of_l:
-						 l = l_candidate
-						 break
-			 }
+				if (any_candidate > 0) {
+					int *possible_candidates=malloc(sizeof(int)*any_candidate);
+					int candidate_count=0;
+					for(int tmp=0; tmp<nk_count; tmp++) {
+						if (mask2[tmp]==1) {
+							possible_candidates[candidate_count]=nbs_of_k[tmp];
+							candidate_count++;
+						}
+					}
+					l_candidate=possible_candidates[rand() % any_candidate];
+					int nl_count=0;
 
-			 if (l==-1){
-				 continue;  // Returns to beginning of while loop
-			 }
-			 cond = 0;
-
-		 }
-		 second_link_index = ((link_list == k) | (link_list == l))
-		 second_link_index = second_link_index.sum(axis=1) == 2
-		 second_link_index = np.arange(E)[second_link_index]
-
-		 # gives id for link i<->k resp. j<->l in original_link_ids
-		 id1, i, k = self.link_id(i, k, N)
-		 id2, j, l = self.link_id(j, l, N)
-
+					// Now check if j is a neighbor of l
+					int *nbs_of_l=malloc(sizeof(int)*N);
+					for (int ec =0; ec<E; ec+=2) {
+						if (link_list[ec]==k)
+						{
+							nbs_of_l[nl_count]=link_list[ec+1]; // TODO check if this is true!
+							nl_count++;
+						}
+					}
+					for (int nl=0; nl<nl_count; nl++) {
+						if (nbs_of_l[nl]==j) {
+							l=l_candidate;
+							break;
+						}
+					}
+				}
+				if (l==-1){
+					continue;  // Returns to beginning of while loop
+				}
+				cond = 0;
+			}
 
 		 A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
 		 A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
 		 A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
 		 A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
 
-		 link_list[first_link_index] = [i, k]
-		 link_list[second_link_index] = [j, l]
-		 sur_link_ids[first_link_index] = id1
-		 sur_link_ids[second_link_index] = id2
-		 c += 1
-		 if c == compute_at:
-			 g = igraph.Graph(link_list.tolist())
-			 x.append(u)
-			 T.append(g.transitivity_avglocal_undirected())
-			 H.append(self._Hamming_Distance(original_link_ids, sur_link_ids))
-			 L.append(g.average_path_length())
-			 ass.append(g.assortativity_degree())
-			 c = 0
-			 print(c,compute_at)
-	 }
+		 // Now find id of second_link_index k<->l
+		 int second_link_index;
+		 for (int ec=0; ec<E; ec++){
+			 if ( (link_list[ec]==k && link_list[ec+1]==l ) |  (link_list[ec]==l && link_list[ec+1]==k ) ) {
+				 second_link_index=ec;
+				 break;
+			 }
+		 }
+
+		 // Now update the link list
+		 link_list[first_link_index*N+0] = s;
+		 link_list[first_link_index*N+1] = l;
+		 link_list[second_link_index*N+0] = k;
+		 link_list[second_link_index*N+1] = t;
+
+		 return [first_link_index, second_link_index];
  }
 
 
