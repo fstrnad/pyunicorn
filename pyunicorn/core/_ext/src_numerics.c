@@ -18,6 +18,7 @@ float *distance(float *D, int node, int *list_of_neighbors, int numNeighbors, in
 	float *d_i_all = malloc(sizeof(float)*numNeighbors) ;
 	for (int i=0; i<numNeighbors; i++) {
 		d_i_all[i]=D[node*N + list_of_neighbors[i]];
+//		printf("d_i_all %d - %d: %2f \n", node, list_of_neighbors[i], d_i_all[i]);
 	}
 	return d_i_all;
 }
@@ -32,6 +33,7 @@ void fisher_yates_shuffeling(int *list_nb, int n){
 	    int temp = list_nb[i];
 	    list_nb[i] = list_nb[j];
 	    list_nb[j] = temp;
+	    printf("fisher yates shuffeling for %d \n", temp);
 	}
 }
 
@@ -50,24 +52,46 @@ void _geo_model_1_fast(int iterations, float tolerance,
 
 	//  Initialize random number generator
 	srand48(time(0));
-	int i, j, k, l ;
+	int i, j, k=0, l ;
 	float *d_i_all;
 	int *list_all_neighbors=malloc(sizeof(int)*N) ;
 	for (int tmp=0; tmp<N; tmp++) {
 		list_all_neighbors[tmp]=tmp;
 	}
 
+	int dim_link_list=2;
+//	for(int link=0; link<2*dim_list*E; link+=2*dim_list){
+//		printf("Link: %d, nodes: %d %d \n", link/(2*dim_list), link_list[link], link_list[link+dim_list]);
+//	}
+//	for(int i=0;i<N;i++){
+//		for(int j=0; j<N;j++){
+//			printf("%d ", A[i*N+j]);
+//		}
+//		printf("\n");
+//	}
+//	for(int i=0;i<N;i++){
+//		for(int j=0; j<N;j++){
+//			printf("%1f ", D[i*N+j]);
+//		}
+//		printf("\n");
+//	}
+//	return ;
+
 	int q = 0;
 	for (int u=0; u< iterations; u++) {
 
-		int cond = 1;
+		int cond = 0;
 		while (cond<1) {
+			printf("cond: %d, q: %d \n", cond, q);
 			q += 1;
 
-			int first_link_index = floor(drand48() * E);
+			int first_link_index = floor(drand48() * E) ;
 
-			i= link_list[first_link_index*N+0];
-			j= link_list[first_link_index*N+1];
+			i= link_list[first_link_index*dim_link_list*2 ];
+			j= link_list[first_link_index*dim_link_list*2 + dim_link_list];
+
+			printf("Length link list: %ld, %d \n", ARR_SIZE(link_list), E);
+			printf("Link index: %d,  Link i: %d, Link j: %d \n", first_link_index, i ,j );
 
 			//			 active_link = np.random.permutation(active_link)
 			//			 i, j = active_link
@@ -75,8 +99,10 @@ void _geo_model_1_fast(int iterations, float tolerance,
 			// If second argument is None, distance to any neighbor node is calculated
 
 
-
 			d_i_all = distance(D, i,list_all_neighbors, N, N );
+//			for (int it=0; it<N; it++) {
+//				printf("d_i_all %d - %d: %2f \n ", i, list_all_neighbors[it], d_i_all[it]);
+//			}
 			int nb_count=0;
 			int *mask=malloc(N*sizeof(int));
 			for (int d=0; d<N; d++){
@@ -84,25 +110,37 @@ void _geo_model_1_fast(int iterations, float tolerance,
 				if (fabs(Dist_j) < tolerance * d_i_all[j]){
 					mask[d]=1;
 					nb_count++;
+					printf("Node %d, nb_count %d, Dist_j: %2f \n", d, nb_count, Dist_j);
 				}
 				else {
 					mask[d]=0;
 				}
 			}
-			// This two we want to exclude! Corresponds False
-			mask[i] = 0;
-			mask[j] = 0;
+			// This two we want to exclude as we want to delete the link i<->j! Corresponds to False
+			if (nb_count>2){
+				mask[i] = 0;
+				mask[j] = 0;
+			}
+			else {
+				continue;
+			}
+//			printf("Mask ij %d, %d \n",mask[i], mask[j] );
+
 
 			int *possible_nbs=malloc(sizeof(int)*nb_count);
 			int tmp=0;
 			for (int d=0; d<N; d++){
-				if (mask[i]==1){
+				if (mask[d]==1){
+//					printf("Mask node d %d %d \n", d, mask[i] );
 					possible_nbs[tmp]=d;
+					printf("Possible neighbor node: %d \n", possible_nbs[tmp]);
 					tmp++;
 				}
 			}
 			// Permutation of possible_nbs list
-			fisher_yates_shuffeling(possible_nbs,nb_count);
+			if (nb_count>2){
+				fisher_yates_shuffeling(possible_nbs,nb_count);
+			}
 
 			l=-1;
 
@@ -169,7 +207,7 @@ void _geo_model_1_fast(int iterations, float tolerance,
 				if (l==-1){
 					continue;  // Returns to beginning of while loop
 				}
-				cond = 0;
+				cond = 1;
 			}
 
 			A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
@@ -178,7 +216,7 @@ void _geo_model_1_fast(int iterations, float tolerance,
 			A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
 
 			// Now find id of second_link_index k<->l
-			int second_link_index;
+			int second_link_index=0;
 			for (int ec=0; ec<E; ec++){
 				if ( (link_list[ec]==k && link_list[ec+1]==l ) |  (link_list[ec]==l && link_list[ec+1]==k ) ) {
 					second_link_index=ec;
@@ -191,8 +229,10 @@ void _geo_model_1_fast(int iterations, float tolerance,
 			link_list[first_link_index*N+1] = k;
 			link_list[second_link_index*N+0] = j;
 			link_list[second_link_index*N+1] = l;
+
 		}
 	}
+    printf("Trials %d, Iterations %d \n", q, iterations);
  }
 
 

@@ -94,28 +94,29 @@ class SpatialNetwork(GeoNetwork):
         else:
             print("ERROR, This grid type is not recognized: ",  grid_type)
             sys.exit(1)
-        
+       
+        #  Get number of nodes
+        N = self.N
+        #  Get number of links
+        E = self.n_links 
         #check_requirements(link_list, n_steps, n_steps)
         #check_GeoModel_requirements(grid, tolerance, grid_type)
         
         #grid=self.grid.coord_sequence_from_rect_grid(lat_grid, lon_grid)
         # Needs to be done to prevent error in computation!
-        link_list=np.array(self.graph.get_edgelist()).copy(order='c')        
+        link_list=np.array(self.graph.get_edgelist(), np.int).copy(order='c')        
 #         link_list = link_list.copy()
         
         A= self.adjacency.copy(order='c')
         
         n_sampling_points=self.n_links
         
-        #  Get number of nodes
-        N = self.N
-        #  Get number of links
-        E = self.n_links
+       
     
         original_link_ids = -0.5 * link_list[:, 0] * (link_list[:, 0] - 2 * N + 1)
         original_link_ids += link_list[:, 1] - link_list[:, 0] - 1
         
-        print("Original_link_ids", link_list[:,0], link_list[:,1], original_link_ids)
+        #print("Original_link_ids", link_list[:,0], link_list[:,1], original_link_ids)
         sur_link_ids = original_link_ids.copy()
     
         compute_at = int(n_steps / n_sampling_points)
@@ -129,8 +130,17 @@ class SpatialNetwork(GeoNetwork):
         ass = [g.assortativity_degree()]
     
         c = 0
-        q = 0
         
+        #print(link_list.shape)
+        np.savetxt('link_list.txt', link_list, delimiter=' ', fmt='%d')
+        
+        print(A.shape)
+        np.savetxt('A.txt', A, delimiter=' ', fmt='%d')
+        np.savetxt('D.txt', D, delimiter=' ', fmt='%1f')
+
+        #link_list = np.reshape(link_list, E*2)
+        #print(link_list.shape)
+      
         _geo_model1(n_steps, tolerance, A, D, link_list, N, E)
         
         
@@ -156,14 +166,6 @@ class SpatialNetwork(GeoNetwork):
 #             c = 0
 #             print(c,compute_at)
     
-        print ("# Total steps:", q)
-    
-        dic = {"x": x, "T": T, "L": L, "H": H, "links": link_list,
-               "assortativity": ass}
-    
-        return link_list, dic
-    
-        print ("# Total steps:", q)
     
         dic = {"x": x, "T": T, "L": L, "H": H, "links": link_list,
                "assortativity": ass}
@@ -190,9 +192,10 @@ class SpatialNetwork(GeoNetwork):
         #check_requirements(link_list, n_steps, n_steps)
         #check_GeoModel_requirements(grid, tolerance, grid_type)
         
-        # Needs to be done to prevent error in computation!
-        link_list=np.array(self.graph.get_edgelist()).copy(order='c')        
-#         link_list = link_list.copy()
+        # Get an array of all links between all nodes in terms of [...,[i,j],...] for all Nodes
+        link_list=np.array(self.graph.get_edgelist(), np.int32).copy(order='c')        
+        
+        #print(link_list)
         
         A= self.adjacency.copy(order='c')
         
@@ -202,12 +205,13 @@ class SpatialNetwork(GeoNetwork):
         N = self.N
         #  Get number of links
         E = self.n_links
-    
+        print("len link list:" , len(link_list), E)
+
     
         original_link_ids = -0.5 * link_list[:, 0] * (link_list[:, 0] - 2 * N + 1)
         original_link_ids += link_list[:, 1] - link_list[:, 0] - 1
         
-        print("Original_link_ids", link_list[:,0], link_list[:,1], original_link_ids)
+        #print("Original_link_ids", link_list[:,0], link_list[:,1], original_link_ids)
         sur_link_ids = original_link_ids.copy()
     
         g = igraph.Graph(link_list.tolist())
