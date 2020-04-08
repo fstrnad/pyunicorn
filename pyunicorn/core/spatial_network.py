@@ -179,7 +179,7 @@ class SpatialNetwork(GeoNetwork):
     
     
     
-    def GeoModel1_slow(self, n_steps, tolerance, grid_type="spherical", verbose=False):
+    def GeoModel1_py(self, n_steps, tolerance, grid_type="spherical", verbose=False):
         
         if grid_type == "spherical":
             D = self.grid.angular_distance()
@@ -240,15 +240,20 @@ class SpatialNetwork(GeoNetwork):
 
                 # If second argument is None, distance to any neighbor node is calculated
                 d_i_all = self.distance( D, i, None  )
+                
+                print(d_i_all)
+                
                 D_tot = d_i_all - d_i_all[j]
-    
+                
                 mask = np.abs(D_tot) < tolerance * d_i_all[j]
                 mask[i] = False
                 mask[j] = False
     
                 possible_nbs = np.arange(N)[mask]
                 possible_nbs = np.random.permutation(possible_nbs)
-    
+                print("Possible nbs: ", possible_nbs)
+                
+                
                 l = None
     
                 for k in possible_nbs:
@@ -257,7 +262,8 @@ class SpatialNetwork(GeoNetwork):
                     nbs_of_k = link_list[nbs_of_k]
                     nbs_of_k = np.array(list(set(nbs_of_k) - set([k])))
                     
-                    #print(nbs_of_k)
+                    print("nbs_of_k", nbs_of_k)
+
                     if i in nbs_of_k or len(nbs_of_k) == 0:
                         continue
     
@@ -269,11 +275,18 @@ class SpatialNetwork(GeoNetwork):
                     mask = np.abs(D_tot) < tolerance * d_k_all
     
                     if mask.any():
+                        print("possible candidates", nbs_of_k[mask])
                         l_candidate = choice(nbs_of_k[mask])
+                        
+                        print("l_candidate",  l_candidate)
                         nbs_of_l = np.fliplr(link_list == l_candidate)
                         nbs_of_l = link_list[nbs_of_l]
+                        
+                        print("nbs_of_l", nbs_of_l)
+
                         if j not in nbs_of_l:
                             l = l_candidate
+                            print("l swap: l ", l, "j",j)
                             break
     
                 if l is None:

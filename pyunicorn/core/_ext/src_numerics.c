@@ -13,27 +13,58 @@
 // geo_network ================================================================
 
 
-
 float *distance(float *D, int node, int *list_of_neighbors, int numNeighbors, int N ){
-	float *d_i_all = malloc(sizeof(float)*numNeighbors) ;
+	float *d_node_all = malloc(sizeof( *d_node_all) * numNeighbors) ;
 	for (int i=0; i<numNeighbors; i++) {
-		d_i_all[i]=D[node*N + list_of_neighbors[i]];
-//		printf("d_i_all %d - %d: %2f \n", node, list_of_neighbors[i], d_i_all[i]);
+		d_node_all[i]=D[node*N + list_of_neighbors[i]];
+//		printf("d_node_all %d - %d: %2f \n", node, list_of_neighbors[i], d_node_all[i]);
 	}
-	return d_i_all;
+	return d_node_all;
 }
 
-// for shuffeling of neighbor_lists
-void fisher_yates_shuffeling(int *list_nb, int n){
-	for (int i = n-1; i >= 0; --i){
-	    //generate a random number [0, n-1]
-	    int j = rand() % (i+1);
+// A utility function to swap to integers
+void swap (int *a, int *b)
+{
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
 
-	    //swap the last element with element at random index
-	    int temp = list_nb[i];
-	    list_nb[i] = list_nb[j];
-	    list_nb[j] = temp;
-	    printf("fisher yates shuffeling for %d \n", temp);
+// A utility function to print an array
+void printArray (int arr[], int n)
+{
+	printf("Array Print: \n");
+    for (int i = 0; i < n; i++){
+        printf(" %d \n", arr[i]);
+    }
+    printf("\n");
+}
+// A utility function to print an array
+void printFloatArray (float arr[], int n)
+{
+	printf("Array Print: \n");
+    for (int i = 0; i < n; i++){
+        printf(" %2f \n", arr[i]);
+    }
+    printf("\n");
+}
+
+
+
+// A function to generate a random permutation of neighbor_lists
+void fisher_yates_shuffeling(int *arr, int n){
+	srand (time(NULL));
+	for (int i = n-1; i > 0; i--){
+		// Start from the last element and swap
+		// one by one. We don't need to run for
+		// the first element that's why i > 0
+		for (int i = n - 1; i > 0; i--)
+		{
+			// Pick a random index from 0 to i
+			int j = rand() % (i + 1);
+			// Swap arr[i] with the element at random index
+			swap(&arr[i], &arr[j]);
+		}
 	}
 }
 
@@ -52,14 +83,13 @@ void _geo_model_1_fast(int iterations, float tolerance,
 
 	//  Initialize random number generator
 	srand48(time(0));
-	int i, j, k=0, l ;
-	float *d_i_all;
-	int *list_all_neighbors=malloc(sizeof(int)*N) ;
+	int i, j, k=0, l=-1;
+	int *list_all_neighbors=malloc(sizeof(*list_all_neighbors)*N) ;
 	for (int tmp=0; tmp<N; tmp++) {
 		list_all_neighbors[tmp]=tmp;
 	}
 
-	int dim_link_list=2;
+	const int dim_link_list=2;
 //	for(int link=0; link<2*dim_list*E; link+=2*dim_list){
 //		printf("Link: %d, nodes: %d %d \n", link/(2*dim_list), link_list[link], link_list[link+dim_list]);
 //	}
@@ -85,151 +115,197 @@ void _geo_model_1_fast(int iterations, float tolerance,
 			printf("cond: %d, q: %d \n", cond, q);
 			q += 1;
 
-			int first_link_index = floor(drand48() * E) ;
+			int rand_edge = floor(drand48() * E) ;
+			int first_link_index=rand_edge*dim_link_list*2;
+			i= link_list[first_link_index];
+			j= link_list[first_link_index + dim_link_list];
 
-			i= link_list[first_link_index*dim_link_list*2 ];
-			j= link_list[first_link_index*dim_link_list*2 + dim_link_list];
+//			printf("Length link list: %ld, %d \n", ARR_SIZE(link_list), E);
+//			printf("Link index: %d,  Link i: %d, Link j: %d \n", first_link_index, i ,j );
 
-			printf("Length link list: %ld, %d \n", ARR_SIZE(link_list), E);
-			printf("Link index: %d,  Link i: %d, Link j: %d \n", first_link_index, i ,j );
-
-			//			 active_link = np.random.permutation(active_link)
-			//			 i, j = active_link
-
-			// If second argument is None, distance to any neighbor node is calculated
-
-
-			d_i_all = distance(D, i,list_all_neighbors, N, N );
+			float *d_i_all;
+			d_i_all=distance(D, i,list_all_neighbors, N, N );
 //			for (int it=0; it<N; it++) {
 //				printf("d_i_all %d - %d: %2f \n ", i, list_all_neighbors[it], d_i_all[it]);
 //			}
+
+			printf("d_i_all\n");
+			printFloatArray(d_i_all, N);
+
+			// Create mask and provide distances in mask
 			int nb_count=0;
-			int *mask=malloc(N*sizeof(int));
+			int mask[N];
 			for (int d=0; d<N; d++){
 				float Dist_j = d_i_all[d] - d_i_all[j];
 				if (fabs(Dist_j) < tolerance * d_i_all[j]){
 					mask[d]=1;
 					nb_count++;
-					printf("Node %d, nb_count %d, Dist_j: %2f \n", d, nb_count, Dist_j);
-				}
-				else {
+//					printf("Node %d, nb_count %d, Dist_j: %2f \n", d, nb_count, Dist_j);
+				} else {
 					mask[d]=0;
 				}
 			}
-			// This two we want to exclude as we want to delete the link i<->j! Corresponds to False
+
+			free(d_i_all);
+
+			// We have to exclude the link i<->j from mask! Corresponds to False
 			if (nb_count>2){
 				mask[i] = 0;
 				mask[j] = 0;
-			}
-			else {
+			} else {
 				continue;
 			}
-//			printf("Mask ij %d, %d \n",mask[i], mask[j] );
 
-
-			int *possible_nbs=malloc(sizeof(int)*nb_count);
+			// Create list of possible neighbors
+			int possible_nbs [nb_count-2];
 			int tmp=0;
 			for (int d=0; d<N; d++){
 				if (mask[d]==1){
-//					printf("Mask node d %d %d \n", d, mask[i] );
 					possible_nbs[tmp]=d;
-					printf("Possible neighbor node: %d \n", possible_nbs[tmp]);
 					tmp++;
 				}
 			}
+
 			// Permutation of possible_nbs list
 			if (nb_count>2){
-				fisher_yates_shuffeling(possible_nbs,nb_count);
+				fisher_yates_shuffeling(possible_nbs,nb_count-2);
+				printArray(possible_nbs, nb_count-2);
 			}
 
-			l=-1;
-
-			for (int rk=0; rk<nb_count; rk++) {
+			// Find neighbor in list of possible nbs with correct distance for nb_count -2 times as i, j are not counted)
+			l = -1;
+			for (int rk=0; rk<nb_count -2 ; rk++) {
 				int nk_count=0;
-				k=possible_nbs[rk];
-				int *nbs_of_k=malloc(sizeof(int)*N);
-				for (int ec =0; ec<E; ec+=2){
-					if (link_list[ec]==k)
-					{
-						nbs_of_k[nk_count]=link_list[ec+1]; // TODO check if this is true!
+				k=possible_nbs[rk]; // check now the neighbors of k
+				int nbs_of_k[N]; // N is the maximum number of neighbor nodes in fully connected network
+				for (int link=0; link<2*dim_link_list*E; link+=2*dim_link_list) {
+					if (link_list[link]==k ) {
+						nbs_of_k[nk_count]=link_list[link+dim_link_list];
+						nk_count++;
+					}
+					// This if is necessary as link list is ordered from smaller node number to larger node number!
+					if (link_list[link+dim_link_list]==k ) {
+						nbs_of_k[nk_count]=link_list[link];
 						nk_count++;
 					}
 				}
 
-				if (in_array(nbs_of_k, nk_count, i) | (nk_count == 0) ) {
+				printf("nbs_of_k k=%d \n", k);
+				printArray(nbs_of_k, nk_count);
+
+				// Test if possible neighbor occurs in nbs_of_k as well
+				if ((in_array(nbs_of_k, nk_count, i)>-1) | (nk_count == 0) ) {
+//					printf("In Array test link i: %d or nk_count: %d, rk %d , while loop %d, step %d !\n", i, nk_count, rk, q, u);
 					continue;
-				}
-				float *d_k_all = distance(D,k, nbs_of_k, nk_count,N);
-				float *d_j_all = distance(D,j, nbs_of_k, nk_count,N);
+				} else {
+					float *d_k_all;
+					d_k_all= distance(D,k, nbs_of_k, nk_count,N);
+					printf("d_k_all: k %d nk_count %d \n", k, nk_count);
 
-				//printf('Lengths', len(d_k_all), len(d_j_all))
-				int mask2[nk_count];
-				int any_candidate=0;
-				for(int d=0; d<nk_count;d++) {
-					float Dist_k_j=d_k_all[d] - d_j_all[d];
-					if (fabs(Dist_k_j)<tolerance*d_k_all[d]) {
-						mask2[d]=1;
-						any_candidate+=1;
-					}
-					else {
-						mask2[d]=0;
-					}
-				}
-				if (any_candidate > 0) {
-					int *possible_candidates=malloc(sizeof(int)*any_candidate);
-					int candidate_count=0;
-					for(int tmp=0; tmp<nk_count; tmp++) {
-						if (mask2[tmp]==1) {
-							possible_candidates[candidate_count]=nbs_of_k[tmp];
-							candidate_count++;
+					float *d_j_all;
+					d_j_all= distance(D,j, nbs_of_k, nk_count,N);
+					printf("d_j_all: j	 %d nk_count %d \n ", j, nk_count);
+
+					int mask2[nk_count];
+					int any_candidate=0;
+					for(int d=0; d<nk_count;d++) {
+						float Dist_k_j=d_k_all[d] - d_j_all[d];
+						if (fabs(Dist_k_j)<tolerance*d_k_all[d]) {
+							mask2[d]=1;
+							any_candidate+=1;
+						} else {
+							mask2[d]=0;
 						}
 					}
-					int l_candidate=possible_candidates[rand() % any_candidate];
-					int nl_count=0;
 
-					// Now check if j is a neighbor of l
-					int *nbs_of_l=malloc(sizeof(int)*N);
-					for (int ec =0; ec<E; ec+=2) {
-						if (link_list[ec]==k)
-						{
+					// Analyze list of possible candidates further
+					if (any_candidate > 0) {
+//						printf("Any candidate: %d \n", any_candidate);
+						int possible_candidates[any_candidate];
+						int candidate_count=0;
+						for(int tmp=0; tmp<nk_count; tmp++) {
+							if (mask2[tmp]==1) {
+								possible_candidates[candidate_count]=nbs_of_k[tmp];
+								candidate_count++;
+							}
+						}
 
-							nbs_of_l[nl_count]=link_list[ec+1]; // TODO check if this is true!
-							nl_count++;
+						printf("Possible_candidates: %d \n", candidate_count);
+						printArray(possible_candidates, candidate_count);
+
+						// Now check for neighbors of l_candidate
+						int l_candidate=possible_candidates[rand() % any_candidate];
+						int nl_count=0;
+						int nbs_of_l[N];
+						for(int link=0; link<2*dim_link_list*E; link+=2*dim_link_list){
+							if (link_list[link]==l_candidate)
+							{
+								nbs_of_l[nl_count]=link_list[link+dim_link_list];
+								nl_count++;
+							}
+							if (link_list[link+dim_link_list]==l_candidate)
+							{
+								nbs_of_l[nl_count]=link_list[link];
+								nl_count++;
+							}
+						}
+						printf("Possible_nl_list: %d \n", nl_count);
+						printArray(nbs_of_l, nl_count);
+
+						for (int nl=0; nl<nl_count; nl++) {
+							// check if j is not in nbs_of_l
+							if (in_array(nbs_of_l, nl_count, j)==-1) {
+								l=l_candidate;
+								printf("l swap found: l %d j %d \n", l,j);
+								rk=nb_count; //  An exchange neighbor is found, leave loop over list of possible neighbors
+//								exit(0);
+								break;
+							}
 						}
 					}
-					for (int nl=0; nl<nl_count; nl++) {
-						if (nbs_of_l[nl]==j) {
-							l=l_candidate;
-							break;
-						}
-					}
+					free(d_k_all);
+					free(d_j_all);
 				}
-				if (l==-1){
-					continue;  // Returns to beginning of while loop
-				}
+			}
+			if (l==-1){
+				printf("Return to beginning of while loop! \n");
+				continue;  // Returns to beginning of while loop
+			} else // Apply change
+			{
+				printf("Apply changes in adjacency matrix: i %d j %d; k %d l%d \n", i, j, k, l);
+				// start changing links in adjacency matrix and link list!
 				cond = 1;
-			}
 
-			A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
-			A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
-			A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
-			A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
+				A[i*N + j] =  A[j*N + i] = 0;  // Delete link i<->j
+				A[k*N + k] =  A[l*N + k] = 0;  // Delete link k<->l
+				A[i*N + k] =  A[k*N + i] = 1;  // Add link i<->k
+				A[j*N + l] =  A[l*N + j] = 1;  // Add link j<->l
 
-			// Now find id of second_link_index k<->l
-			int second_link_index=0;
-			for (int ec=0; ec<E; ec++){
-				if ( (link_list[ec]==k && link_list[ec+1]==l ) |  (link_list[ec]==l && link_list[ec+1]==k ) ) {
-					second_link_index=ec;
-					break;
+				printf("Changed Adj matrix. \n");
+
+				// Now find id of second_link_index k<->l
+				int second_link_index=0;
+
+				//	for(int link=0; link<2*dim_list*E; link+=2*dim_list){
+				//		printf("Link: %d, nodes: %d %d \n", link/(2*dim_list), link_list[link], link_list[link+dim_list]);
+				//	}
+
+				for (int link=0; link<2*dim_link_list*E; link+=2*dim_link_list){
+					if ( (link_list[link]==k && link_list[link+dim_link_list]==l ) ||  (link_list[link]==l && link_list[link+dim_link_list]==k ) ) {
+						second_link_index=link;
+						break;
+					}
 				}
+				printf("Second link index found: %d \n", second_link_index);
+
+				// Now update the link list to i<->k j<->l
+				link_list[first_link_index] = i;
+				link_list[first_link_index+ dim_link_list] = k;
+				link_list[second_link_index] = j;
+				link_list[second_link_index+dim_link_list] = l;
+
+				printf("link list updated! \n") ;
 			}
-
-			// Now update the link list to i<->k j<->l
-			link_list[first_link_index*N+0] = i;
-			link_list[first_link_index*N+1] = k;
-			link_list[second_link_index*N+0] = j;
-			link_list[second_link_index*N+1] = l;
-
 		}
 	}
     printf("Trials %d, Iterations %d \n", q, iterations);
