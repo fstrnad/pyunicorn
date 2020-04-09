@@ -56,14 +56,7 @@ class SpatialNetwork(GeoNetwork):
         id += node2 - node1 - 1
         
         return id, node1, node2 
-        
     
-    def check_requirements(self, link_list, n_steps, ):
-    
-        return True
-    
-    def check_GeoModel_requirements(self, grid, tolerance, grid_type):
-        return True
     
     def _Hamming_Distance(self, A, B):
         #  Check if the graphs have the same number of vertices
@@ -83,7 +76,13 @@ class SpatialNetwork(GeoNetwork):
     length as those that are removed from the network. This means
     that the four randomly drawn nodes i, j, k, and l form
     a kite with exactly one link present at each of the two sides
-    of the same length 
+    of the same length.
+    
+    The here implemented version of Wiedermann et al. 2016 differs from the original 
+    paper in so far that it uses a mask with a certain tolerance. Only nodes within 
+    this mask are further analyzed. This is a very good approximation of the 
+    original paper. However, one saves significantly computation time using
+    the below outlined code. 
     """ 
     def GeoModel1(self, n_steps, tolerance, grid_type="spherical", verbose=False):
         
@@ -109,49 +108,24 @@ class SpatialNetwork(GeoNetwork):
         
         A= self.adjacency.copy(order='c')
         
-        n_sampling_points=self.n_links
-        
-       
-    
-        original_link_ids = -0.5 * link_list[:, 0] * (link_list[:, 0] - 2 * N + 1)
-        original_link_ids += link_list[:, 1] - link_list[:, 0] - 1
-        
-        #print("Original_link_ids", link_list[:,0], link_list[:,1], original_link_ids)
-        sur_link_ids = original_link_ids.copy()
-    
-        compute_at = int(n_steps / n_sampling_points)
-        print(compute_at)
-        g = igraph.Graph(link_list.tolist())
-    
-        T = [g.transitivity_avglocal_undirected()]
-        x = [0]
-        H = [0]
-        L = [g.average_path_length()]
-        ass = [g.assortativity_degree()]
-    
-        c = 0
-        
-        #print(link_list.shape)
-        np.savetxt('link_list.txt', link_list, delimiter=' ', fmt='%d')
-        
-        np.savetxt('A.txt', A, delimiter=' ', fmt='%d')
-        np.savetxt('D.txt', D, delimiter=' ', fmt='%1f')
-
         _geo_model1(n_steps, tolerance, A, D, link_list, N, E)   # run as fast c - code!
-            
-        dic = {"x": x, "T": T, "L": L, "H": H, "links": link_list,
-               "assortativity": ass}
         
         # Update adjacancy matrix
         self.adjacency=A
             
         
-        return link_list, dic
+        return link_list
 
     
     
     
     def GeoModel1_py(self, n_steps, tolerance, grid_type="spherical", verbose=False):
+        """
+        This implementation in python can be used for further analysis, as e.g. plotting data
+        for Hamming Distance, it does the same operation as the c-implemented version. 
+        The here implemented version offers however the possibility of further investigation
+        of the inner working of the GeoModel1. 
+        """
         
         if grid_type == "spherical":
             D = self.grid.angular_distance()
@@ -203,9 +177,7 @@ class SpatialNetwork(GeoNetwork):
 
                 # If second argument is None, distance to any neighbor node is calculated
                 d_i_all = self.distance( D, i, None  )
-                
-                print(d_i_all)
-                
+                                
                 D_tot = d_i_all - d_i_all[j]
                 
                 mask = np.abs(D_tot) < tolerance * d_i_all[j]
@@ -283,7 +255,7 @@ class SpatialNetwork(GeoNetwork):
         dic = {"x": x, "T": T, "L": L, "H": H, "links": link_list,
                "assortativity": ass}
         
-        # Update Adjcancy matrix
+        # Update adjcancy matrix
         self.adjacency=A
             
         
@@ -359,6 +331,12 @@ class SpatialNetwork(GeoNetwork):
      
         
     def GeoModel2_py(self, n_steps, tolerance, grid_type="spherical", verbose=False):
+        """
+        This implementation in python can be used for further analysis, as e.g. plotting data
+        for Hamming Distance, it does the same operation as the c-implemented version. 
+        The here implemented version offers however the possibility of further investigation
+        of the inner working of the GeoModel2. 
+        """
         
         if grid_type == "spherical":
             D = self.grid.angular_distance()
